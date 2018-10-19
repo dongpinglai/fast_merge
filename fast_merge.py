@@ -77,6 +77,8 @@ class FastMerge(object):
             repo.index.merge_tree(branch_from_remote, base=merge_base)
             # 提交并提供指向两个父提交
             repo.index.commit("merge {} into {}".format(from_branch, to_branch), parent_commits=(current_branch.commit, branch_from_remote.commit))
+            # 不可以少的一步：执行新提交的checkout
+            current_branch.checkout(force=True)
         else:
             raise Exception("git_merge: current branch <{}> is not to_branch<{}>".format(current_branch.name, to_branch))
 
