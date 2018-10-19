@@ -103,8 +103,19 @@ class FastMerge(object):
         if current_branch.name != branch_name: 
             origin = repo.remotes[remote_name]
             if not self._branch_in_heads(repo, branch_name): 
-                repo.create_head(branch_name, origin.refs[branch_name]).set_tracking_branch(origin.refs[branch_name])
+                repo.create_head(branch_name, origin.refs[branch_name])
+            if not self._branch_in_remote(origin, branch_name):
+                branch = repo.heads[branch_name]
+                branch.set_tracking_branch(origin.refs[branch_name])
             repo.heads[branch_name].checkout()
+        
+    def _branch_in_remote(self, origin, branch_name):
+        r_remote_names = [remote_ref.name for remote_ref in origin.refs]
+        flag = False
+        if branch_name in r_remote_names:
+            flag = True
+        return flag
+
             
     def _branch_in_heads(self, repo, branch_name):
         r_head_names = [head.name for head in repo.heads]    
