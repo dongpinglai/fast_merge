@@ -70,7 +70,10 @@ class FastMerge(object):
         origin = repo.remotes[remote_name] 
         # double check条件
         if current_branch.name == to_branch:
-            branch_from_remote = origin.refs[from_branch]
+            try:
+                branch_from_remote = origin.refs[from_branch]
+            except IndexError:
+                branch_from_remote = repo.heads[from_branch]
             # 找到两个分支的合并基
             merge_base = repo.merge_base(current_branch, branch_from_remote)
             # 合并操作
