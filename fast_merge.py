@@ -193,11 +193,22 @@ def fast_data_merge(from_hosts, to_host, db_name, page_ids):
 
 
 action_methods = {
-    "fast_merge": fast_merge,
-    "fast_code_merge": fast_code_merge,
-    "fast_data_merge": fast_data_merge
+    "fast_merge": (fast_merge, ("workdirs", "from_branches", "to_branch", "from_hosts", "to_host", "db_name", "page_ids", "remote_name")),
+    "fast_code_merge": (fast_code_merge, ("workdirs", "from_branches", "to_branch", "remote_name")), 
+    "fast_data_merge": (fast_data_merge, ("from_hosts", "to_host", "db_name", "page_ids")), 
+    "default": (None, None)
 }
 
+
+def get_kwargs(action, args):
+    method, fields = action_methods.get(action, "default")
+    if method is None:
+        raise Exception("action is wrong")
+    kwargs = {}
+    for key in fields:
+        kwargs[key] = args.__dict__[key]
+    return kwargs
+    
 
 def main():
     import argparse
@@ -214,9 +225,7 @@ def main():
     args = parser.parse_args()
     action = args.action
     action_method = action_methods.get(action)
-    kwargs = {}
-    args.__dict__.pop("action")
-    kwargs.update(args.__dict__)
+    kwargs = get_kwargs(action, args)
     action_method(**kwargs)
     
 
