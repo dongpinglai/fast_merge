@@ -200,32 +200,32 @@ action_methods = {
 }
 
 
-def get_kwargs(action, args):
+def get_method_kwargs(action, args):
     method, fields = action_methods.get(action, "default")
     if method is None:
         raise Exception("action is wrong")
     kwargs = {}
     for key in fields:
         kwargs[key] = args.__dict__[key]
-    return kwargs
+    return method, kwargs
     
 
 def main():
     import argparse
     parser = argparse.ArgumentParser("fast_merge.py")
     parser.add_argument("-a", "--action", required=True)
-    parser.add_argument("--workdirs", default=[])
-    parser.add_argument("--from_branches", default=[])
+    parser.add_argument("--workdirs", nargs="*")
+    parser.add_argument("--from_branches", nargs="*")
     parser.add_argument("--to_branch")
-    parser.add_argument("--from_hosts", default=[])
+    parser.add_argument("--from_hosts", nargs="*")
     parser.add_argument("--to_host")
     parser.add_argument("--db_name")
-    parser.add_argument("--page_ids", default=[])
-    parser.add_argument("--remote_name")
+    parser.add_argument("--page_ids", nargs="*")
+    parser.add_argument("--remote_name", default="origin")
     args = parser.parse_args()
     action = args.action
-    action_method = action_methods.get(action)
-    kwargs = get_kwargs(action, args)
+    action_method, kwargs = get_method_kwargs(action, args)
+    print kwargs
     action_method(**kwargs)
     
 
