@@ -203,17 +203,21 @@ def main():
     import argparse
     parser = argparse.ArgumentParser("fast_merge.py")
     parser.add_argument("-a", "--action", required=True)
-    parser.add_argument("--from_branchs")
+    parser.add_argument("--workdirs", default=[])
+    parser.add_argument("--from_branches", default=[])
     parser.add_argument("--to_branch")
-    parser.add_argument("--from_hosts")
+    parser.add_argument("--from_hosts", default=[])
     parser.add_argument("--to_host")
     parser.add_argument("--db_name")
-    parser.add_argument("--page_ids")
+    parser.add_argument("--page_ids", default=[])
     parser.add_argument("--remote_name")
     args = parser.parse_args()
     action = args.action
     action_method = action_methods.get(action)
-    action_method(**args)
+    kwargs = {}
+    args.__dict__.pop("action")
+    kwargs.update(args.__dict__)
+    action_method(**kwargs)
     
 
 if __name__ == "__main__":
