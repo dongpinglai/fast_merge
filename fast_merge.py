@@ -91,7 +91,7 @@ class FastMerge(object):
 
     def git_push(self, repo, remote_name="origin"):
         origin = repo.remotes[remote_name]
-        # TODO: 未追踪push
+        # TODO: 未追踪push2
         origin.push()
 
     def git_fetch(self, repo, remote_name="origin"):
