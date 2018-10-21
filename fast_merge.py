@@ -73,13 +73,13 @@ class FastMerge(object):
             try:
                 branch_from_remote = origin.refs[from_branch]
             except IndexError:
-                branch_from_remote = repo.heads[to_branch]
+                branch_from_remote = repo.heads[from_branch]
             # 找到两个分支的合并基
             merge_base = repo.merge_base(current_branch, branch_from_remote)
             # 合并操作
             repo.index.merge_tree(branch_from_remote, base=merge_base)
             # 提交并提供指向两个父提交
-            repo.index.commit("merge {} into {}".format(from_branch, to_branch), parent_commits=(current_branch.commit, branch_from_remote.commit))
+            repo.index.commit("merge {} into {} by script fast_merge.py".format(from_branch, to_branch), parent_commits=(current_branch.commit, branch_from_remote.commit))
             # 不可以少的一步：执行新提交的checkout
             current_branch.checkout(force=True)
         else:
@@ -91,6 +91,7 @@ class FastMerge(object):
 
     def git_push(self, repo, remote_name="origin"):
         origin = repo.remotes[remote_name]
+        # TODO: 未追踪push
         origin.push()
 
     def git_fetch(self, repo, remote_name="origin"):
@@ -105,9 +106,18 @@ class FastMerge(object):
         current_branch = repo.active_branch
         if current_branch.name != branch_name: 
             origin = repo.remotes[remote_name]
-            if not self._branch_in_heads(repo, branch_name): 
-                repo.create_head(branch_name, origin.refs[branch_name]).set_tracking_branch(origin.refs[branch_name])
-            repo.heads[branch_name].checkout()
+            if self._branch_in_heads(repo, branch_name): 
+                repo.heads[branch_name].checkout()
+            elif self._branch_in_remote(origin, branch_name):
+                repo.create_head(branch_name, origin.refs[branch_name]).set_tracking_branch(origin.refs[branch_name]) 
+                repo.heads[branch_name].checkout()
+        
+    def _branch_in_remote(self, origin, branch_name):
+        r_remote_names = [remote_ref.name for remote_ref in origin.refs]
+        flag = False
+        if branch_name in r_remote_names:
+            flag = True
+        return flag
             
     def _branch_in_heads(self, repo, branch_name):
         r_head_names = [head.name for head in repo.heads]    
