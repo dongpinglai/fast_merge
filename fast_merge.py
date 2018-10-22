@@ -56,7 +56,7 @@ class FastMerge(object):
         多个代码库，多个分支合并到目标分支，并且提交
         """
         self.bulk_code_merge(code_repos,from_branches, to_branch, remote_name)
-        self.git_bulk_push(self.code_repos, remote_name, to_branch)
+        self.git_bulk_push(self.code_repos, to_branch, remote_name) 
 
     def bulk_code_merge(self, code_repos, from_branches, to_branch, remote_name="origin"):
         """将代码合并
