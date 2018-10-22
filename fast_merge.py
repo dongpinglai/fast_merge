@@ -111,8 +111,7 @@ class FastMerge(object):
             self.git_push(repo, branch_name, remote_name) 
 
     def git_push(self, repo, branch_name, remote_name="origin"):
-        origin = repo.remotes[remote_name]
-        origin.push("{}:{}/{}".format(branch_name, remote_name, branch_name))
+        repo.git.push(remote_name, branch_name)
 
     def git_fetch(self, repo, remote_name="origin"):
         origin = repo.remotes[remote_name]
