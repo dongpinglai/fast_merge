@@ -10,10 +10,18 @@ import json
 
 USAGE = """
 该脚本用于代码库的合并和不同数据库实例中page_setup表中数据的迁移
+代码合并，提交:
+    可以同时操作多个代码库，将多个分支合并到某一分支，并提交
+    命令:
+        python fast_merge.py -a fast_code_merge --workdirs <workdir1> <workdir2> --from_branches dev,dev2 dev,dev2 --to_branch master --remote_name origin
+    示例:
+        python fast_merge.py -a fast_code_merge --workdirs . --from_branches dev --to_branch master --remote_name origin
 数据迁移：
     可以从多个数据库实例中迁移数据到某数据库实例中
-    命令：python fast_merge.py -a fast_data_merge --from_hosts <from_host1> <from_host2> --to_host <to_host> --page_ids <page_ids1> <page_ids2> --db_name <db_name>
-    示例:python fast_merge.py -a fast_data_merge --from_hosts 192.168.0.102:27098 192.168.0.235:27017 --to_host 192.168.0.203:27018 --page_ids 5b724cf89ff6eb2b4ff72352,5b724cf89ff6eb2b4ff72353 5b724cf89ff6eb2b4ff72355 --db_name gz_opinion
+    命令：
+        python fast_merge.py -a fast_data_merge --from_hosts <from_host1> <from_host2> --to_host <to_host> --page_ids <page_ids1> <page_ids2> --db_name <db_name>
+    示例:
+        python fast_merge.py -a fast_data_merge --from_hosts 192.168.0.102:27098 192.168.0.235:27017 --to_host 192.168.0.203:27018 --page_ids 5b724cf89ff6eb2b4ff72352,5b724cf89ff6eb2b4ff72353 5b724cf89ff6eb2b4ff72355 --db_name gz_opinion
 
 """
 
@@ -48,17 +56,18 @@ class FastMerge(object):
         多个代码库，多个分支合并到目标分支，并且提交
         """
         self.bulk_code_merge(code_repos,from_branches, to_branch, remote_name)
-        self.git_bulk_push(self.code_repos, remote_name)
+        self.git_bulk_push(self.code_repos, remote_name, to_branch)
 
     def bulk_code_merge(self, code_repos, from_branches, to_branch, remote_name="origin"):
         """将代码合并
         code_repos: git库列表
-        from_branches: 需要合并的分支名列表，list, [branch1, branch2, ...]
+        from_branches: 需要合并的分支名列表，list, ["branch1,branch3", "branch2", ...]
         to_branch: 合并到的目标分支名, str
         """
-        for code_repo in code_repos:
-            for from_branch in from_branches:
-                self.code_merge(code_repo, from_branch, to_branch)
+        for code_repo, _from_branches in zip(code_repos, from_branches):
+            _from_branches = _from_branches.split(",")
+            for _from_branch in _from_branches:
+                self.code_merge(code_repo, _from_branch, to_branch)
     
     def code_merge(self, code_repo, from_branch, to_branch, remote_name="origin"):
         if not code_repo.is_dirty() and not code_repo.untracked_files:
@@ -97,14 +106,13 @@ class FastMerge(object):
         else:
             raise Exception("git_merge: current branch <{}> is not to_branch<{}>".format(current_branch.name, to_branch))
 
-    def git_bulk_push(self, repos, remote_name="orgin"):
+    def git_bulk_push(self, repos, branch_name, remote_name="orgin"):
         for repo in repos:
-            self.git_push(repo, remote_name) 
+            self.git_push(repo, branch_name, remote_name) 
 
-    def git_push(self, repo, remote_name="origin"):
+    def git_push(self, repo, branch_name, remote_name="origin"):
         origin = repo.remotes[remote_name]
-        # TODO: 未追踪push2
-        origin.push()
+        origin.push("{}:{}/{}".format(branch_name, remote_name, branch_name))
 
     def git_fetch(self, repo, remote_name="origin"):
         origin = repo.remotes[remote_name]
