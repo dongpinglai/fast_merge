@@ -4,6 +4,18 @@
 from bson import ObjectId
 import pymongo
 import git
+import json
+
+
+
+USAGE = """
+该脚本用于代码库的合并和不同数据库实例中page_setup表中数据的迁移
+数据迁移：
+    可以从多个数据库实例中迁移数据到某数据库实例中
+    命令：python fast_merge.py -a fast_data_merge --from_hosts <from_host1> <from_host2> --to_host <to_host> --page_ids <page_ids1> <page_ids2> --db_name <db_name>
+    示例:python fast_merge.py -a fast_data_merge --from_hosts 192.168.0.102:27098 192.168.0.235:27017 --to_host 192.168.0.203:27018 --page_ids 5b724cf89ff6eb2b4ff72352,5b724cf89ff6eb2b4ff72353 5b724cf89ff6eb2b4ff72355 --db_name gz_opinion
+
+"""
 
 
 class FastMerge(object):
@@ -134,22 +146,23 @@ class FastMerge(object):
         db_name: str
         page_ids: ["pageid1,pageid11", "pageid2", "pageid3, pageid33"]
         """
+        print "migrating data, page_ids <{}> from {} to {}".format(page_ids, from_hosts, to_host)
         page_setup_datas = []
-        page_id_index = 0
-        for from_host in from_hosts:
-            _page_ids = page_ids[page_id_index].split(",")
+        for from_host, _page_ids in zip(from_hosts, page_ids):
+            _page_ids = _page_ids.split(",")
             page_setup_data = cls.get_merginData_pageSetup(from_host, db_name, _page_ids)
             for _data in page_setup_data:
                 page_setup_datas.append(_data)
-            page_id_index += 1
         cls.insert_pageSetup_data(to_host, db_name, page_setup_datas)
+        print "data has migrated from {} to {}".format(from_hosts, to_host)
 
     @classmethod
     def get_merginData_pageSetup(cls, from_host, db_name, page_ids):
         if from_host in cls._client_cache:
             client = cls._client_cache[from_host]
         else:
-            client = pymongo.MongoClient(from_host[0], from_host[1])
+            from_host_ip, from_host_port = from_host.split(":")
+            client = pymongo.MongoClient(from_host_ip, int(from_host_port))
             cls._client_cache[from_host] = client
         db = client[db_name]
         page_ids = [ObjectId(p_id) for p_id in page_ids]
@@ -160,7 +173,11 @@ class FastMerge(object):
     
     @classmethod
     def insert_pageSetup_data(cls, to_host, db_name, page_setup_datas):
-        client = pymongo.MongoClient(to_host[0], to_host[1])
+        if to_host in cls._client_cache:
+            client = cls._client_cache[to_host]
+        else:
+            to_host_ip, to_host_port = to_host.split(":")
+            client = pymongo.MongoClient(to_host_ip, int(to_host_port))
         db = client[db_name]
         try:
             for doc in page_setup_datas: 
@@ -168,8 +185,8 @@ class FastMerge(object):
         except Exception as e:
             print "insert_pageSetup_data: save {} failed".format(doc)
             raise e
-        
 
+        
 def classify_workdirs(workdirs):
     """
     工作目录分类
