@@ -95,14 +95,15 @@ class FastMerge(object):
                 branch_from_remote = origin.refs[from_branch]
             except IndexError:
                 branch_from_remote = repo.heads[from_branch]
+            repo.git.merge(branch_from_remote.name)
             # 找到两个分支的合并基
-            merge_base = repo.merge_base(current_branch, branch_from_remote)
+            # merge_base = repo.merge_base(current_branch, branch_from_remote)
             # 合并操作
-            repo.index.merge_tree(branch_from_remote, base=merge_base)
+            # repo.index.merge_tree(branch_from_remote, base=merge_base)
             # 提交并提供指向两个父提交
-            repo.index.commit("merge {} into {} by script fast_merge.py".format(from_branch, to_branch), parent_commits=(current_branch.commit, branch_from_remote.commit))
+            # repo.index.commit("merge {} into {} by script fast_merge.py".format(from_branch, to_branch), parent_commits=(current_branch.commit, branch_from_remote.commit))
             # 不可以少的一步：执行新提交的checkout
-            current_branch.checkout(force=True)
+            # current_branch.checkout(force=True)
         else:
             raise Exception("git_merge: current branch <{}> is not to_branch<{}>".format(current_branch.name, to_branch))
 
