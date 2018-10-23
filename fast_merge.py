@@ -5,18 +5,34 @@ from bson import ObjectId
 import pymongo
 import git
 import json
+import sys
 
 
 
 USAGE = """
 该脚本用于代码库的合并和不同数据库实例中page_setup表中数据的迁移
+代码合并以及数据库page_setup数据迁移：
+    命令:
+        python fast_merge.py -a fast_merge --workdirs <workdir1> <workdir2> --from_branches dev,dev2 dev,dev2 --to_branch master --remote_name origin --from_hosts <from_host1> <from_host2> --to_host <to_host> --page_ids <page_ids1> <page_ids2> --db_name <db_name> 
+    详细说明：
+    1.用于代码合并的参数说明:
+        --workdirs: 工作目录，支持多个传值 ,空格分隔, 
+        --from_branches: 需要合并的源分支，支持多个传值，空格分隔；传值个数与工作目录一致，单个值示例：branch1或branch1,branch2，表示对应的工作目录下操作的分支
+        --to_branch: 将要合并到的目标分支
+        --remote_name: 远程库的名称，默认为origin
+    2.用于数据迁移的参数说明:
+        --from_hosts: 源数据库主机,支持多个传值,空格分开;eg: ip1:port1或ip:port ip2:port2
+        --to_host: 目标数据库主机
+        --db_name: 数据库名称
+        --page_ids: 页面id, 支持多个传值，空格分隔； 传值个数与from_hosts一致，单个传值示例：page_id1或者page_id1,page_id2，表示对应源主机查找多个页面id
+
 代码合并，提交:
     可以同时操作多个代码库，将多个分支合并到某一分支，并提交
     命令:
         python fast_merge.py -a fast_code_merge --workdirs <workdir1> <workdir2> --from_branches dev,dev2 dev,dev2 --to_branch master --remote_name origin
     示例:
         python fast_merge.py -a fast_code_merge --workdirs . --from_branches dev --to_branch master --remote_name origin
-数据迁移：
+数据迁移(page_setup数据）：
     可以从多个数据库实例中迁移数据到某数据库实例中
     命令：
         python fast_merge.py -a fast_data_merge --from_hosts <from_host1> <from_host2> --to_host <to_host> --page_ids <page_ids1> <page_ids2> --db_name <db_name>
@@ -236,14 +252,17 @@ action_methods = {
     "fast_merge": (fast_merge, ("workdirs", "from_branches", "to_branch", "from_hosts", "to_host", "db_name", "page_ids", "remote_name")),
     "fast_code_merge": (fast_code_merge, ("workdirs", "from_branches", "to_branch", "remote_name")), 
     "fast_data_merge": (fast_data_merge, ("from_hosts", "to_host", "db_name", "page_ids")), 
-    "default": (None, None)
 }
 
 
 def get_method_kwargs(action, args):
-    method, fields = action_methods.get(action, "default")
+    try:
+        method, fields = action_methods.get(action, (None, None))
+    except:
+        raise
     if method is None:
-        raise Exception("action is wrong")
+        print USAGE
+        sys.exit()
     kwargs = {}
     for key in fields:
         kwargs[key] = args.__dict__[key]
